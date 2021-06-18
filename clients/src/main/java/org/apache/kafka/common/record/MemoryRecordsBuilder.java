@@ -397,6 +397,7 @@ public class MemoryRecordsBuilder implements AutoCloseable {
 
     /**
      * Append a record and return its checksum for message format v0 and v1, or null for v2 and above.
+     *  附加一条记录并返回它的校验和(对于消息格式v0和v1)，或者对于v2及以上版本的校验和为null。
      */
     private Long appendWithOffset(long offset, boolean isControlRecord, long timestamp, ByteBuffer key,
                                   ByteBuffer value, Header[] headers) {
@@ -542,6 +543,7 @@ public class MemoryRecordsBuilder implements AutoCloseable {
 
     /**
      * Append a new record at the next sequential offset.
+     *  在下一个顺序偏移量处追加一条新记录
      * @param timestamp The record timestamp
      * @param key The record key
      * @param value The record value

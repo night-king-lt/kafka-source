@@ -50,7 +50,7 @@ import static org.apache.kafka.common.record.RecordBatch.NO_TIMESTAMP;
 
 /**
  * A batch of records that is or will be sent.
- *
+ *  正在或将要发送的一批记录
  * This class is not thread safe and external synchronization must be used when modifying it
  */
 public final class ProducerBatch {
@@ -97,7 +97,7 @@ public final class ProducerBatch {
 
     /**
      * Append the record to the current record set and return the relative offset within that record set
-     *
+     *  将记录追加到当前记录集并返回该记录集中的相对偏移量
      * @return The RecordSend corresponding to this record or null if there isn't sufficient room.
      */
     public FutureRecordMetadata tryAppend(long timestamp, byte[] key, byte[] value, Header[] headers, Callback callback, long now) {

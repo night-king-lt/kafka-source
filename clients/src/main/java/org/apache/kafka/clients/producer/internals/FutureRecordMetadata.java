@@ -26,6 +26,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * The future result of a record send
+ * 记录发送的未来结果
  */
 public final class FutureRecordMetadata implements Future<RecordMetadata> {
 

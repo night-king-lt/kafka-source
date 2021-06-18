@@ -58,6 +58,7 @@ import org.slf4j.Logger;
 
 /**
  * This class acts as a queue that accumulates records into {@link MemoryRecords}
+ * 这个类充当一个队列，将记录累加到{@link MemoryRecords}中。
  * instances to be sent to the server.
  * <p>
  * The accumulator uses a bounded amount of memory and append calls will block when that memory is exhausted, unless
@@ -77,6 +78,9 @@ public final class RecordAccumulator {
     private final BufferPool free;
     private final Time time;
     private final ApiVersions apiVersions;
+    /**
+     *  一个{@link java.util。Map}提供线程安全性和原子性担保。
+     */
     private final ConcurrentMap<TopicPartition, Deque<ProducerBatch>> batches;
     private final IncompleteBatches incomplete;
     // The following variables are only accessed by the sender thread, so we don't need to protect them.
@@ -162,6 +166,7 @@ public final class RecordAccumulator {
 
     /**
      * Add a record to the accumulator, return the append result
+     * 向累加器添加一条记录，返回附加结果
      * <p>
      * The append result will contain the future metadata, and flag for whether the appended batch is full or a new batch is created
      * <p>
@@ -223,6 +228,7 @@ public final class RecordAccumulator {
                 RecordAppendResult appendResult = tryAppend(timestamp, key, value, headers, callback, dq, nowMs);
                 if (appendResult != null) {
                     // Somebody else found us a batch, return the one we waited for! Hopefully this doesn't happen often...
+                    // 有人给我们找到了一批，把我们等待的那一批还给我们!希望这不会经常发生。
                     return appendResult;
                 }
 
@@ -231,6 +237,7 @@ public final class RecordAccumulator {
                 FutureRecordMetadata future = Objects.requireNonNull(batch.tryAppend(timestamp, key, value, headers,
                         callback, nowMs));
 
+                // 将这批消息添加到队列中
                 dq.addLast(batch);
                 incomplete.add(batch);
 
@@ -255,7 +262,7 @@ public final class RecordAccumulator {
 
     /**
      *  Try to append to a ProducerBatch.
-     *
+     * 尝试添加到ProducerBatch
      *  If it is full, we return null and a new batch is created. We also close the batch for record appends to free up
      *  resources like compression buffers. The batch will be fully closed (ie. the record batch headers will be written
      *  and memory records built) in one of the following cases (whichever comes first): right before send,
@@ -263,6 +270,7 @@ public final class RecordAccumulator {
      */
     private RecordAppendResult tryAppend(long timestamp, byte[] key, byte[] value, Header[] headers,
                                          Callback callback, Deque<ProducerBatch> deque, long nowMs) {
+        // 获取队列里面最后一个累加器
         ProducerBatch last = deque.peekLast();
         if (last != null) {
             FutureRecordMetadata future = last.tryAppend(timestamp, key, value, headers, callback, nowMs);
@@ -646,12 +654,21 @@ public final class RecordAccumulator {
 
     /**
      * Get the deque for the given topic-partition, creating it if necessary.
+     * 获取给定主题分区的deque，必要时创建deque
      */
     private Deque<ProducerBatch> getOrCreateDeque(TopicPartition tp) {
+        /**
+         *  为什么先get而不是直接 putIfAbsent？
+         *   避免多次 new ArrayDeque， 增加不必要的内存和gc
+         */
         Deque<ProducerBatch> d = this.batches.get(tp);
         if (d != null)
             return d;
         d = new ArrayDeque<>();
+        /**
+         *  putIfAbsent方法是原子性的，可以保证对集合的操作同步，不会出现线程安全问题；如果集合中已经存在对应的key就返回对应的值，
+         *  否则将key、value存入集合，返回null,所以要对返回的值做一个判断。
+         */
         Deque<ProducerBatch> previous = this.batches.putIfAbsent(tp, d);
         if (previous == null)
             return d;
@@ -802,8 +819,9 @@ public final class RecordAccumulator {
         this.free.close();
     }
 
-    /*
+    /**
      * Metadata about a record just appended to the record accumulator
+     * 关于刚刚附加到记录累加器中的记录的元数据
      */
     public final static class RecordAppendResult {
         public final FutureRecordMetadata future;
